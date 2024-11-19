@@ -1,31 +1,47 @@
 def is_mutant(dna):
-    def check_sequence(matrix, n, m, delta_x, delta_y):
-        """Comprueba si hay una secuencia consecutiva en una dirección."""
-        count = 1
-        x, y = n, m
-        while (
-            0 <= x + delta_x < len(matrix) and
-            0 <= y + delta_y < len(matrix[0]) and
-            matrix[x][y] == matrix[x + delta_x][y + delta_y]
-        ):
-            count += 1
-            x += delta_x
-            y += delta_y
-            if count == 4:
-                return True
-        return False
+    """
+    Detecta si una secuencia de ADN pertenece a un mutante.
+    Args:
+        dna (list[str]): Lista de cadenas que representan la matriz NxN de ADN.
+    Returns:
+        bool: True si es mutante, False si es humano.
+    """
+    n = len(dna)
 
-    sequences = 0
-    matrix = [list(row) for row in dna]
-    for i in range(len(matrix)):
-        for j in range(len(matrix[0])):
+    # Validación de que es una matriz NxN
+    if not all(len(row) == n for row in dna):
+        raise ValueError("La secuencia de ADN debe ser una matriz NxN.")
+
+    # Validación de caracteres
+    valid_chars = {'A', 'T', 'C', 'G'}
+    for row in dna:
+        if any(char not in valid_chars for char in row):
+            raise ValueError("La secuencia de ADN contiene caracteres inválidos. Solo se permiten 'A', 'T', 'C', 'G'.")
+
+    mutant_sequences = 0
+
+    def check_sequence(i, j, di, dj):
+        """Chequea si hay 4 letras consecutivas iguales en una dirección dada."""
+        count = 1
+        for _ in range(3):
+            i, j = i + di, j + dj
+            if 0 <= i < n and 0 <= j < n and dna[i][j] == dna[i - di][j - dj]:
+                count += 1
+            else:
+                break
+        return count == 4
+
+    for i in range(n):
+        for j in range(n):
+            # Revisar horizontal, vertical y diagonales
             if (
-                check_sequence(matrix, i, j, 1, 0) or  # Vertical
-                check_sequence(matrix, i, j, 0, 1) or  # Horizontal
-                check_sequence(matrix, i, j, 1, 1) or  # Diagonal hacia abajo
-                check_sequence(matrix, i, j, 1, -1)   # Diagonal hacia arriba
+                j <= n - 4 and check_sequence(i, j, 0, 1) or  # Horizontal
+                i <= n - 4 and check_sequence(i, j, 1, 0) or  # Vertical
+                i <= n - 4 and j <= n - 4 and check_sequence(i, j, 1, 1) or  # Diagonal \
+                i >= 3 and j <= n - 4 and check_sequence(i, j, -1, 1)  # Diagonal /
             ):
-                sequences += 1
-                if sequences > 1:
+                mutant_sequences += 1
+                if mutant_sequences > 1:
                     return True
+
     return False

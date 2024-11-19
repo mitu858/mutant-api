@@ -6,28 +6,32 @@ bp = Blueprint('routes', __name__)
 
 @bp.route('/mutant/', methods=['POST'])
 def mutant():
-    data = request.json
-    dna = data.get("dna", [])
-    if not dna or not isinstance(dna, list):
-        return jsonify({"error": "Invalid DNA format"}), 400
+    try:
+        data = request.get_json()
+        dna = data.get("dna")
+        
+        # Validación del formato de entrada
+        if not dna or not isinstance(dna, list):
+            return jsonify({"error": "Formato inválido. 'dna' debe ser una lista de cadenas."}), 400
 
-    sequence = ",".join(dna)  # Combina el ADN en un solo string
-    existing_dna = DNA.query.filter_by(sequence=sequence).first()
+        # Validación de que es una matriz NxN
+        n = len(dna)
+        if not all(isinstance(row, str) and len(row) == n for row in dna):
+            return jsonify({"error": "La secuencia de ADN debe ser una matriz NxN con cadenas de igual longitud."}), 400
 
-    if existing_dna:  # Si ya está en la base de datos
-        if existing_dna.is_mutant:
-            return jsonify({"message": "Mutant"}), 200
-        return jsonify({"message": "Human"}), 403
+        # Validación de caracteres válidos
+        valid_chars = {'A', 'T', 'C', 'G'}
+        for row in dna:
+            if any(char not in valid_chars for char in row):
+                return jsonify({"error": "La secuencia de ADN contiene caracteres inválidos. Solo se permiten 'A', 'T', 'C', 'G'."}), 400
 
-    # Analiza si es mutante
-    mutant_result = is_mutant(dna)
-    new_dna = DNA(sequence=sequence, is_mutant=mutant_result)
-    db.session.add(new_dna)
-    db.session.commit()
-
-    if mutant_result:
-        return jsonify({"message": "Mutant"}), 200
-    return jsonify({"message": "Human"}), 403
+        # Verificar si es mutante
+        if is_mutant(dna):
+            return jsonify({"message": "Mutante detectado."}), 200
+        else:
+            return jsonify({"message": "No es un mutante."}), 403
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
 
 
 @bp.route('/stats', methods=['GET'])
