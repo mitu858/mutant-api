@@ -98,7 +98,6 @@ POST https://mutant-api.azurewebsites.net/mutant/
 
 - 200 OK: Si es mutante.
 - 403 Forbidden: Si no es mutante.
-- 
 ## Endpoints de la API
 ### 1. Verificar ADN mutante
 #### Endpoint:
